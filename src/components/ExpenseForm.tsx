@@ -1,0 +1,11 @@
+import { useEffect, useState } from 'react'
+import type { Expense, ExpenseInput } from '../domain/types'
+
+type Props = { categories: string[]; editing?: Expense | null; onSave: (input: ExpenseInput, id?: string) => Promise<void>; onCancel: () => void }
+const today = () => new Date().toISOString().slice(0, 10)
+export function ExpenseForm({ categories, editing, onSave, onCancel }: Props) {
+  const [amount, setAmount] = useState(''); const [date, setDate] = useState(today()); const [category, setCategory] = useState(categories[0] ?? 'その他'); const [memo, setMemo] = useState(''); const [error, setError] = useState('')
+  useEffect(() => { setAmount(editing ? String(editing.amount) : ''); setDate(editing?.date ?? today()); setCategory(editing?.category ?? categories[0] ?? 'その他'); setMemo(editing?.memo ?? '') }, [editing, categories])
+  const submit = async (event: React.FormEvent) => { event.preventDefault(); const value = Number(amount); if (!Number.isInteger(value) || value <= 0) return setError('金額は 1 円以上の整数で入力してください。'); if (!date || !category) return setError('日付とカテゴリを選択してください。'); setError(''); await onSave({ amount: value, date, category, memo: memo.trim() }, editing?.id); if (!editing) setAmount('') }
+  return <form className="card expense-form" onSubmit={submit}><div className="section-heading"><h2>{editing ? '支出を編集' : '支出を登録'}</h2>{editing && <button type="button" className="text-button" onClick={onCancel}>キャンセル</button>}</div><label className="amount-label">金額<input aria-label="金額" inputMode="numeric" type="number" min="1" step="1" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" autoFocus required /></label><div className="field-row"><label>日付<input type="date" value={date} onChange={e => setDate(e.target.value)} required /></label><label>カテゴリ<select value={category} onChange={e => setCategory(e.target.value)}>{categories.map(x => <option key={x}>{x}</option>)}</select></label></div><label>メモ（任意）<input value={memo} maxLength={100} onChange={e => setMemo(e.target.value)} placeholder="例：スーパー" /></label>{error && <p className="form-error" role="alert">{error}</p>}<button className="primary-button" type="submit">{editing ? '変更を保存' : '支出を登録'}</button></form>
+}
